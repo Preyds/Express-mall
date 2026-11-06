@@ -96,8 +96,7 @@
   </div>
 
   <script>
-    // PUT YOUR ACTUAL SUPABASE URL HERE 👇
-    const SUPABASE_URL = 'https://lpkyznjbkfofvmwqxaha.supabase.co'; 
+    const SUPABASE_URL = 'https://lpkyznjbkfofvmwqxaha.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_jqVK03Q3Q5I9Dgnesw0RsA_qE2O7BnS';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -153,7 +152,7 @@
       chosenSize = '';
       chosenColor = '';
 
-      document.getElementById('modalProductTitle.innerText').innerText = selectedProduct.title;
+      document.getElementById('modalProductTitle').innerText = selectedProduct.title;
 
       // Sizes setup
       const sizeContainer = document.getElementById('sizeContainer');
@@ -161,7 +160,7 @@
       if (selectedProduct.sizes && selectedProduct.sizes.length > 0) {
         sizeContainer.classList.remove('hidden');
         sizeOptions.innerHTML = selectedProduct.sizes.map(size => `
-          <button onclick="selectSize('${size}', this)" class="size-btn px-3 py-1.5 border rounded text-xs font-bold text-gray-700 hover:border-orange-500">${size}</button>
+          <button onclick="selectSize('${size}', this)" type="button" class="size-btn px-3 py-1.5 border rounded text-xs font-bold text-gray-700 hover:border-orange-500">${size}</button>
         `).join('');
       } else {
         sizeContainer.classList.add('hidden');
@@ -173,7 +172,7 @@
       if (selectedProduct.colors && selectedProduct.colors.length > 0) {
         colorContainer.classList.remove('hidden');
         colorOptions.innerHTML = selectedProduct.colors.map(color => `
-          <button onclick="selectColor('${color}', this)" class="color-btn px-3 py-1.5 border rounded text-xs font-bold text-gray-700 hover:border-orange-500">${color}</button>
+          <button onclick="selectColor('${color}', this)" type="button" class="color-btn px-3 py-1.5 border rounded text-xs font-bold text-gray-700 hover:border-orange-500">${color}</button>
         `).join('');
       } else {
         colorContainer.classList.add('hidden');
@@ -285,3 +284,4 @@
   </script>
 </body>
 </html>
+    
