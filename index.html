@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ExpressMall | Online Shopping</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-100 font-sans pb-20 md:pb-0">
+
+  <!-- Header / Navbar -->
+  <header class="sticky top-0 z-50 bg-orange-500 text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+      <!-- Logo -->
+      <a href="#" class="text-xl font-black tracking-wider uppercase flex items-center gap-1">
+        <i data-lucide="shopping-bag"></i> ExpressMall
+      </a>
+
+      <!-- Search Bar -->
+      <div class="flex-1 max-w-lg relative">
+        <input type="text" id="searchInput" placeholder="Search products, brands and categories..." 
+               class="w-full py-2 pl-4 pr-10 rounded-md text-gray-800 text-sm focus:outline-none shadow-inner" />
+        <button onclick="handleSearch()" class="absolute right-2 top-2 text-gray-500">
+          <i data-lucide="search" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center gap-4">
+        <button onclick="toggleCartModal()" class="relative flex items-center gap-1 text-sm font-semibold">
+          <i data-lucide="shopping-cart"></i>
+          <span class="hidden md:inline">Cart</span>
+          <span id="cartBadge" class="absolute -top-2 -right-2 bg-yellow-400 text-gray-900 text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center hidden">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-3 py-4 space-y-6">
+
+    <!-- Hero Banner / Flash Sales Header -->
+    <section class="bg-gradient-to-r from-orange-600 to-amber-500 rounded-lg p-4 text-white shadow-lg flex justify-between items-center">
+      <div>
+        <span class="bg-red-600 text-xs font-bold uppercase px-2 py-1 rounded">Flash Sales</span>
+        <h2 class="text-xl md:text-2xl font-bold mt-1">Top Deals Up To 50% Off</h2>
+        <p class="text-xs md:text-sm text-orange-100">Limited stock available!</p>
+      </div>
+      <i data-lucide="zap" class="w-12 h-12 text-yellow-300 animate-pulse"></i>
+    </section>
+
+    <!-- Categories horizontal scroll for mobile -->
+    <section>
+      <h3 class="text-base font-bold text-gray-800 mb-2">Categories</h3>
+      <div id="categoryContainer" class="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+        <!-- Categories injected dynamically -->
+        <div class="animate-pulse flex space-x-4">
+          <div class="h-16 w-20 bg-gray-300 rounded"></div>
+          <div class="h-16 w-20 bg-gray-300 rounded"></div>
+          <div class="h-16 w-20 bg-gray-300 rounded"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Product Grid -->
+    <section>
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-lg font-bold text-gray-800">Recommended For You</h3>
+      </div>
+      <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+        <!-- Products injected dynamically -->
+      </div>
+    </section>
+  </main>
+
+  <!-- Mobile Bottom Navigation -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-2 z-40 md:hidden">
+    <a href="#" class="flex flex-col items-center text-orange-500 text-xs font-medium">
+      <i data-lucide="home" class="w-5 h-5"></i>
+      Home
+    </a>
+    <button onclick="toggleCartModal()" class="flex flex-col items-center text-gray-600 text-xs font-medium relative">
+      <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+      Cart
+    </button>
+  </nav>
+
+  <!-- Cart Modal / Sidebar Drawer -->
+  <div id="cartModal" class="fixed inset-0 bg-black/50 z-50 hidden flex justify-end">
+    <div class="w-full max-w-md bg-white h-full flex flex-col shadow-2xl">
+      <div class="p-4 bg-orange-500 text-white flex justify-between items-center">
+        <h3 class="font-bold text-lg flex items-center gap-2"><i data-lucide="shopping-cart"></i> Your Cart</h3>
+        <button onclick="toggleCartModal()" class="text-white hover:text-gray-200"><i data-lucide="x"></i></button>
+      </div>
+
+      <div id="cartItemsContainer" class="flex-1 overflow-y-auto p-4 space-y-3">
+        <p class="text-center text-gray-500 mt-10">Your cart is empty.</p>
+      </div>
+
+      <div class="p-4 border-t border-gray-200 bg-gray-50 space-y-3">
+        <div class="flex justify-between text-base font-bold text-gray-800">
+          <span>Total:</span>
+          <span id="cartTotal">₦0.00</span>
+        </div>
+        <button onclick="checkout()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg shadow uppercase text-sm">
+          Proceed to Checkout
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize Supabase Client
+    const SUPABASE_URL = 'YOUR_SUPABASE_PROJECT_URL';
+    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let cart = JSON.parse(localStorage.getItem('app_cart')) || [];
+
+    // Initialize icons
+    lucide.createIcons();
+
+    // Fetch Products
+    async function loadProducts() {
+      const { data: products, error } = await _supabase
+        .from('products')
+        .select('*');
+
+      if (error) {
+        console.error('Error fetching products:', error);
+        return;
+      }
+      renderProducts(products);
+    }
+
+    function renderProducts(products) {
+      const grid = document.getElementById('productGrid');
+      grid.innerHTML = products.map(p => `
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition">
+          <img src="${p.image_url}" alt="${p.title}" class="h-36 sm:h-44 w-full object-cover">
+          <div class="p-2.5 flex-1 flex flex-col justify-between">
+            <div>
+              <h4 class="text-xs sm:text-sm font-medium text-gray-800 line-clamp-2">${p.title}</h4>
+              <div class="mt-1 flex items-baseline gap-1.5">
+                <span class="text-sm sm:text-base font-bold text-gray-900">₦${p.price.toLocaleString()}</span>
+                ${p.old_price ? `<span class="text-xs text-gray-400 line-through">₦${p.old_price.toLocaleString()}</span>` : ''}
+              </div>
+            </div>
+            <button onclick="addToCart('${p.id}', '${p.title}', ${p.price}, '${p.image_url}')" 
+                    class="mt-2 w-full bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold py-2 rounded uppercase transition flex items-center justify-center gap-1">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add To Cart
+            </button>
+          </div>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    // Cart Management
+    function addToCart(id, title, price, image_url) {
+      const existing = cart.find(item => item.id === id);
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        cart.push({ id, title, price, image_url, qty: 1 });
+      }
+      updateCartUI();
+    }
+
+    function updateCartUI() {
+      localStorage.setItem('app_cart', JSON.stringify(cart));
+      const badge = document.getElementById('cartBadge');
+      const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
+      
+      if (totalQty > 0) {
+        badge.innerText = totalQty;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+
+      const container = document.getElementById('cartItemsContainer');
+      if (cart.length === 0) {
+        container.innerHTML = `<p class="text-center text-gray-500 mt-10">Your cart is empty.</p>`;
+      } else {
+        container.innerHTML = cart.map(item => `
+          <div class="flex items-center gap-3 border-b pb-3">
+            <img src="${item.image_url}" class="w-12 h-12 object-cover rounded">
+            <div class="flex-1">
+              <h5 class="text-xs font-semibold text-gray-800 line-clamp-1">${item.title}</h5>
+              <p class="text-xs text-gray-500">₦${item.price.toLocaleString()} x ${item.qty}</p>
+            </div>
+            <button onclick="removeFromCart('${item.id}')" class="text-red-500 text-xs">Remove</button>
+          </div>
+        `).join('');
+      }
+
+      const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+      document.getElementById('cartTotal').innerText = `₦${total.toLocaleString()}`;
+    }
+
+    function removeFromCart(id) {
+      cart = cart.filter(item => item.id !== id);
+      updateCartUI();
+    }
+
+    function toggleCartModal() {
+      document.getElementById('cartModal').classList.toggle('hidden');
+    }
+
+    function checkout() {
+      if (cart.length === 0) return alert('Your cart is empty!');
+      alert('Order placed successfully! Integration with Paystack or Flutterwave goes here.');
+      cart = [];
+      updateCartUI();
+      toggleCartModal();
+    }
+
+    // Initial Load
+    loadProducts();
+    updateCartUI();
+  </script>
+</body>
+        </html>
+        
