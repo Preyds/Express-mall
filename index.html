@@ -51,7 +51,7 @@
 
   <!-- Product Options Modal -->
   <div id="optionModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-wite bg-white w-full max-w-sm rounded-xl p-5 shadow-2xl space-y-4">
+    <div class="bg-white w-full max-w-sm rounded-xl p-5 shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b pb-2">
         <h4 id="modalProductTitle" class="font-bold text-gray-800 text-sm line-clamp-1">Select Options</h4>
         <button onclick="closeOptionModal()" class="text-gray-500 hover:text-gray-700"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -96,7 +96,8 @@
   </div>
 
   <script>
-    const SUPABASE_URL = 'https://your-project-ref.supabase.co'; // Keep your URL here
+    // PUT YOUR ACTUAL SUPABASE URL HERE 👇
+    const SUPABASE_URL = 'https://lpkyznjbkfofvmwqxaha.supabase.co'; 
     const SUPABASE_ANON_KEY = 'sb_publishable_jqVK03Q3Q5I9Dgnesw0RsA_qE2O7BnS';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -110,13 +111,20 @@
 
     async function loadProducts() {
       const { data: products, error } = await _supabase.from('products').select('*');
-      if (error) { console.error(error); return; }
-      allProducts = products;
-      renderProducts(products);
+      if (error) { 
+        console.error('Error loading products:', error); 
+        return; 
+      }
+      allProducts = products || [];
+      renderProducts(allProducts);
     }
 
     function renderProducts(products) {
       const grid = document.getElementById('productGrid');
+      if (!products || products.length === 0) {
+        grid.innerHTML = `<p class="col-span-full text-center text-gray-500 py-10">No products found.</p>`;
+        return;
+      }
       grid.innerHTML = products.map(p => `
         <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition">
           <img src="${p.image_url}" alt="${p.title}" class="h-36 sm:h-44 w-full object-cover">
@@ -145,7 +153,7 @@
       chosenSize = '';
       chosenColor = '';
 
-      document.getElementById('modalProductTitle').innerText = selectedProduct.title;
+      document.getElementById('modalProductTitle.innerText').innerText = selectedProduct.title;
 
       // Sizes setup
       const sizeContainer = document.getElementById('sizeContainer');
@@ -153,7 +161,7 @@
       if (selectedProduct.sizes && selectedProduct.sizes.length > 0) {
         sizeContainer.classList.remove('hidden');
         sizeOptions.innerHTML = selectedProduct.sizes.map(size => `
-          <button onclick="selectSize('${size}')" class="size-btn px-3 py-1.5 border rounded text-xs font-bold text-gray-700 hover:border-orange-500">${size}</button>
+          <button onclick="selectSize('${size}', this)" class="size-btn px-3 py-1.5 border rounded text-xs font-bold text-gray-700 hover:border-orange-500">${size}</button>
         `).join('');
       } else {
         sizeContainer.classList.add('hidden');
@@ -165,7 +173,7 @@
       if (selectedProduct.colors && selectedProduct.colors.length > 0) {
         colorContainer.classList.remove('hidden');
         colorOptions.innerHTML = selectedProduct.colors.map(color => `
-          <button onclick="selectColor('${color}')" class="color-btn px-3 py-1.5 border rounded text-xs font-bold text-gray-700 hover:border-orange-500">${color}</button>
+          <button onclick="selectColor('${color}', this)" class="color-btn px-3 py-1.5 border rounded text-xs font-bold text-gray-700 hover:border-orange-500">${color}</button>
         `).join('');
       } else {
         colorContainer.classList.add('hidden');
@@ -175,16 +183,16 @@
       document.getElementById('optionModal').classList.remove('hidden');
     }
 
-    function selectSize(size) {
+    function selectSize(size, btn) {
       chosenSize = size;
       document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('bg-orange-500', 'text-white'));
-      event.target.classList.add('bg-orange-500', 'text-white');
+      btn.classList.add('bg-orange-500', 'text-white');
     }
 
-    function selectColor(color) {
+    function selectColor(color, btn) {
       chosenColor = color;
       document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('bg-orange-500', 'text-white'));
-      event.target.classList.add('bg-orange-500', 'text-white');
+      btn.classList.add('bg-orange-500', 'text-white');
     }
 
     function closeOptionModal() {
