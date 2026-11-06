@@ -4,47 +4,32 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ExpressMall | Online Shopping</title>
-  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-gray-100 font-sans pb-20 md:pb-0">
 
-  <!-- Header / Navbar -->
+  <!-- Header -->
   <header class="sticky top-0 z-50 bg-orange-500 text-white shadow-md">
     <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-      <!-- Logo -->
       <a href="#" class="text-xl font-black tracking-wider uppercase flex items-center gap-1">
         <i data-lucide="shopping-bag"></i> ExpressMall
       </a>
-
-      <!-- Search Bar -->
       <div class="flex-1 max-w-lg relative">
         <input type="text" id="searchInput" placeholder="Search products, brands and categories..." 
                class="w-full py-2 pl-4 pr-10 rounded-md text-gray-800 text-sm focus:outline-none shadow-inner" />
-        <button onclick="handleSearch()" class="absolute right-2 top-2 text-gray-500">
-          <i data-lucide="search" class="w-5 h-5"></i>
-        </button>
       </div>
-
-      <!-- Actions -->
-      <div class="flex items-center gap-4">
-        <button onclick="toggleCartModal()" class="relative flex items-center gap-1 text-sm font-semibold">
-          <i data-lucide="shopping-cart"></i>
-          <span class="hidden md:inline">Cart</span>
-          <span id="cartBadge" class="absolute -top-2 -right-2 bg-yellow-400 text-gray-900 text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center hidden">0</span>
-        </button>
-      </div>
+      <button onclick="toggleCartModal()" class="relative flex items-center gap-1 text-sm font-semibold">
+        <i data-lucide="shopping-cart"></i>
+        <span class="hidden md:inline">Cart</span>
+        <span id="cartBadge" class="absolute -top-2 -right-2 bg-yellow-400 text-gray-900 text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center hidden">0</span>
+      </button>
     </div>
   </header>
 
   <!-- Main Container -->
   <main class="max-w-7xl mx-auto px-3 py-4 space-y-6">
-
-    <!-- Hero Banner / Flash Sales Header -->
     <section class="bg-gradient-to-r from-orange-600 to-amber-500 rounded-lg p-4 text-white shadow-lg flex justify-between items-center">
       <div>
         <span class="bg-red-600 text-xs font-bold uppercase px-2 py-1 rounded">Flash Sales</span>
@@ -54,54 +39,50 @@
       <i data-lucide="zap" class="w-12 h-12 text-yellow-300 animate-pulse"></i>
     </section>
 
-    <!-- Categories horizontal scroll for mobile -->
-    <section>
-      <h3 class="text-base font-bold text-gray-800 mb-2">Categories</h3>
-      <div id="categoryContainer" class="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
-        <!-- Categories injected dynamically -->
-        <div class="animate-pulse flex space-x-4">
-          <div class="h-16 w-20 bg-gray-300 rounded"></div>
-          <div class="h-16 w-20 bg-gray-300 rounded"></div>
-          <div class="h-16 w-20 bg-gray-300 rounded"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Product Grid -->
     <section>
       <div class="flex justify-between items-center mb-3">
         <h3 class="text-lg font-bold text-gray-800">Recommended For You</h3>
       </div>
       <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-        <!-- Products injected dynamically -->
+        <!-- Products injected -->
       </div>
     </section>
   </main>
 
-  <!-- Mobile Bottom Navigation -->
-  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-2 z-40 md:hidden">
-    <a href="#" class="flex flex-col items-center text-orange-500 text-xs font-medium">
-      <i data-lucide="home" class="w-5 h-5"></i>
-      Home
-    </a>
-    <button onclick="toggleCartModal()" class="flex flex-col items-center text-gray-600 text-xs font-medium relative">
-      <i data-lucide="shopping-cart" class="w-5 h-5"></i>
-      Cart
-    </button>
-  </nav>
+  <!-- Product Options Modal -->
+  <div id="optionModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-wite bg-white w-full max-w-sm rounded-xl p-5 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h4 id="modalProductTitle" class="font-bold text-gray-800 text-sm line-clamp-1">Select Options</h4>
+        <button onclick="closeOptionModal()" class="text-gray-500 hover:text-gray-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      
+      <div id="sizeContainer" class="space-y-1.5 hidden">
+        <label class="text-xs font-bold text-gray-700 uppercase">Select Size:</label>
+        <div id="sizeOptions" class="flex flex-wrap gap-2"></div>
+      </div>
 
-  <!-- Cart Modal / Sidebar Drawer -->
+      <div id="colorContainer" class="space-y-1.5 hidden">
+        <label class="text-xs font-bold text-gray-700 uppercase">Select Color:</label>
+        <div id="colorOptions" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <button id="confirmAddToCartBtn" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-lg text-xs uppercase shadow">
+        Add To Cart
+      </button>
+    </div>
+  </div>
+
+  <!-- Cart Modal -->
   <div id="cartModal" class="fixed inset-0 bg-black/50 z-50 hidden flex justify-end">
     <div class="w-full max-w-md bg-white h-full flex flex-col shadow-2xl">
       <div class="p-4 bg-orange-500 text-white flex justify-between items-center">
         <h3 class="font-bold text-lg flex items-center gap-2"><i data-lucide="shopping-cart"></i> Your Cart</h3>
         <button onclick="toggleCartModal()" class="text-white hover:text-gray-200"><i data-lucide="x"></i></button>
       </div>
-
       <div id="cartItemsContainer" class="flex-1 overflow-y-auto p-4 space-y-3">
         <p class="text-center text-gray-500 mt-10">Your cart is empty.</p>
       </div>
-
       <div class="p-4 border-t border-gray-200 bg-gray-50 space-y-3">
         <div class="flex justify-between text-base font-bold text-gray-800">
           <span>Total:</span>
@@ -115,26 +96,22 @@
   </div>
 
   <script>
-    // Initialize Supabase Client
-    const SUPABASE_URL = 'https://lpkyznjbkfofvmwqxaha.supabase.co';
+    const SUPABASE_URL = 'https://your-project-ref.supabase.co'; // Keep your URL here
     const SUPABASE_ANON_KEY = 'sb_publishable_jqVK03Q3Q5I9Dgnesw0RsA_qE2O7BnS';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let cart = JSON.parse(localStorage.getItem('app_cart')) || [];
+    let allProducts = [];
+    let selectedProduct = null;
+    let chosenSize = '';
+    let chosenColor = '';
 
-    // Initialize icons
     lucide.createIcons();
 
-    // Fetch Products
     async function loadProducts() {
-      const { data: products, error } = await _supabase
-        .from('products')
-        .select('*');
-
-      if (error) {
-        console.error('Error fetching products:', error);
-        return;
-      }
+      const { data: products, error } = await _supabase.from('products').select('*');
+      if (error) { console.error(error); return; }
+      allProducts = products;
       renderProducts(products);
     }
 
@@ -151,7 +128,7 @@
                 ${p.old_price ? `<span class="text-xs text-gray-400 line-through">₦${p.old_price.toLocaleString()}</span>` : ''}
               </div>
             </div>
-            <button onclick="addToCart('${p.id}', '${p.title}', ${p.price}, '${p.image_url}')" 
+            <button onclick="openAddToCartModal('${p.id}')" 
                     class="mt-2 w-full bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold py-2 rounded uppercase transition flex items-center justify-center gap-1">
               <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add To Cart
             </button>
@@ -161,15 +138,88 @@
       lucide.createIcons();
     }
 
-    // Cart Management
-    function addToCart(id, title, price, image_url) {
-      const existing = cart.find(item => item.id === id);
+    function openAddToCartModal(id) {
+      selectedProduct = allProducts.find(p => p.id === id);
+      if (!selectedProduct) return;
+
+      chosenSize = '';
+      chosenColor = '';
+
+      document.getElementById('modalProductTitle').innerText = selectedProduct.title;
+
+      // Sizes setup
+      const sizeContainer = document.getElementById('sizeContainer');
+      const sizeOptions = document.getElementById('sizeOptions');
+      if (selectedProduct.sizes && selectedProduct.sizes.length > 0) {
+        sizeContainer.classList.remove('hidden');
+        sizeOptions.innerHTML = selectedProduct.sizes.map(size => `
+          <button onclick="selectSize('${size}')" class="size-btn px-3 py-1.5 border rounded text-xs font-bold text-gray-700 hover:border-orange-500">${size}</button>
+        `).join('');
+      } else {
+        sizeContainer.classList.add('hidden');
+      }
+
+      // Colors setup
+      const colorContainer = document.getElementById('colorContainer');
+      const colorOptions = document.getElementById('colorOptions');
+      if (selectedProduct.colors && selectedProduct.colors.length > 0) {
+        colorContainer.classList.remove('hidden');
+        colorOptions.innerHTML = selectedProduct.colors.map(color => `
+          <button onclick="selectColor('${color}')" class="color-btn px-3 py-1.5 border rounded text-xs font-bold text-gray-700 hover:border-orange-500">${color}</button>
+        `).join('');
+      } else {
+        colorContainer.classList.add('hidden');
+      }
+
+      document.getElementById('confirmAddToCartBtn').onclick = finalizeAddToCart;
+      document.getElementById('optionModal').classList.remove('hidden');
+    }
+
+    function selectSize(size) {
+      chosenSize = size;
+      document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('bg-orange-500', 'text-white'));
+      event.target.classList.add('bg-orange-500', 'text-white');
+    }
+
+    function selectColor(color) {
+      chosenColor = color;
+      document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('bg-orange-500', 'text-white'));
+      event.target.classList.add('bg-orange-500', 'text-white');
+    }
+
+    function closeOptionModal() {
+      document.getElementById('optionModal').classList.add('hidden');
+    }
+
+    function finalizeAddToCart() {
+      if (selectedProduct.sizes && selectedProduct.sizes.length > 0 && !chosenSize) {
+        return alert('Please select a size!');
+      }
+      if (selectedProduct.colors && selectedProduct.colors.length > 0 && !chosenColor) {
+        return alert('Please select a color!');
+      }
+
+      const cartKey = `${selectedProduct.id}-${chosenSize}-${chosenColor}`;
+      const existing = cart.find(item => item.cartKey === cartKey);
+
       if (existing) {
         existing.qty += 1;
       } else {
-        cart.push({ id, title, price, image_url, qty: 1 });
+        cart.push({
+          cartKey,
+          id: selectedProduct.id,
+          title: selectedProduct.title,
+          price: selectedProduct.price,
+          image_url: selectedProduct.image_url,
+          size: chosenSize || 'Standard',
+          color: chosenColor || 'Standard',
+          qty: 1
+        });
       }
+
       updateCartUI();
+      closeOptionModal();
+      toggleCartModal();
     }
 
     function updateCartUI() {
@@ -193,9 +243,10 @@
             <img src="${item.image_url}" class="w-12 h-12 object-cover rounded">
             <div class="flex-1">
               <h5 class="text-xs font-semibold text-gray-800 line-clamp-1">${item.title}</h5>
-              <p class="text-xs text-gray-500">₦${item.price.toLocaleString()} x ${item.qty}</p>
+              <p class="text-[11px] text-gray-500">Size: ${item.size} | Color: ${item.color}</p>
+              <p class="text-xs text-gray-700 font-bold">₦${item.price.toLocaleString()} x ${item.qty}</p>
             </div>
-            <button onclick="removeFromCart('${item.id}')" class="text-red-500 text-xs">Remove</button>
+            <button onclick="removeFromCart('${item.cartKey}')" class="text-red-500 text-xs font-semibold">Remove</button>
           </div>
         `).join('');
       }
@@ -204,8 +255,8 @@
       document.getElementById('cartTotal').innerText = `₦${total.toLocaleString()}`;
     }
 
-    function removeFromCart(id) {
-      cart = cart.filter(item => item.id !== id);
+    function removeFromCart(cartKey) {
+      cart = cart.filter(item => item.cartKey !== cartKey);
       updateCartUI();
     }
 
@@ -215,16 +266,14 @@
 
     function checkout() {
       if (cart.length === 0) return alert('Your cart is empty!');
-      alert('Order placed successfully! Integration with Paystack or Flutterwave goes here.');
+      alert('Order placed successfully!');
       cart = [];
       updateCartUI();
       toggleCartModal();
     }
 
-    // Initial Load
     loadProducts();
     updateCartUI();
   </script>
 </body>
-        </html>
-        
+</html>
