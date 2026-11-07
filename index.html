@@ -20,11 +20,19 @@
         <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Search products, brands and categories..." 
                class="w-full py-2 pl-4 pr-10 rounded-md text-gray-800 text-sm focus:outline-none shadow-inner" />
       </div>
-      <button onclick="toggleCartModal()" class="relative flex items-center gap-1 text-sm font-semibold">
-        <i data-lucide="shopping-cart"></i>
-        <span class="hidden md:inline">Cart</span>
-        <span id="cartBadge" class="absolute -top-2 -right-2 bg-yellow-400 text-gray-900 text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center hidden">0</span>
-      </button>
+      <div class="flex items-center gap-3">
+        <!-- Auth Button -->
+        <button id="authNavBtn" onclick="openAuthModal()" class="flex items-center gap-1 text-sm font-semibold bg-orange-600 px-3 py-1.5 rounded-lg hover:bg-orange-700 transition">
+          <i data-lucide="user" class="w-4 h-4"></i>
+          <span id="authBtnText">Account</span>
+        </button>
+        <!-- Cart Button -->
+        <button onclick="toggleCartModal()" class="relative flex items-center gap-1 text-sm font-semibold">
+          <i data-lucide="shopping-cart"></i>
+          <span class="hidden md:inline">Cart</span>
+          <span id="cartBadge" class="absolute -top-2 -right-2 bg-yellow-400 text-gray-900 text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center hidden">0</span>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -59,6 +67,45 @@
       </div>
     </section>
   </main>
+
+  <!-- Auth Modal (Login / Signup) -->
+  <div id="authModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-xl p-5 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h4 id="authModalTitle" class="font-bold text-gray-800 text-sm">Customer Login</h4>
+        <button onclick="closeAuthModal()" class="text-gray-500 hover:text-gray-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      
+      <div id="loggedInView" class="hidden space-y-3 text-center py-4">
+        <p class="text-xs text-gray-600">Logged in as:</p>
+        <p id="userEmailDisplay" class="font-bold text-sm text-gray-800"></p>
+        <button onclick="handleLogout()" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 rounded-lg text-xs uppercase shadow">
+          Log Out
+        </button>
+      </div>
+
+      <div id="loggedOutView" class="space-y-3">
+        <div>
+          <label class="text-xs font-bold text-gray-700 uppercase">Email Address</label>
+          <input type="email5" id="authEmail" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-orange-500" placeholder="your@email.com">
+        </div>
+        <div>
+          <label class="text-xs font-bold text-gray-700 uppercase">Password</label>
+          <input type="password" id="authPassword" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-orange-500" placeholder="••••••••">
+        </div>
+
+        <button id="authActionBtn" onclick="handleAuthSubmit()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-lg text-xs uppercase shadow">
+          Login
+        </button>
+
+        <div class="text-center pt-2 border-t">
+          <button id="authSwitchBtn" onclick="toggleAuthMode()" class="text-xs text-orange-600 font-semibold hover:underline">
+            Don't have an account? Sign Up
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Product Options Modal -->
   <div id="optionModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
@@ -117,8 +164,96 @@
     let selectedProduct = null;
     let chosenSize = '';
     let chosenColor = '';
+    let isSignUpMode = false;
+    let currentUser = null;
 
     lucide.createIcons();
+
+    // Check active session on load
+    async function checkAuthSession() {
+      const { data: { session } } = await _supabase.auth.getSession();
+      currentUser = session?.user || null;
+      updateAuthUI();
+    }
+
+    function updateAuthUI() {
+      const btnText = document.getElementById('authBtnText');
+      const loggedInView = document.getElementById('loggedInView');
+      const loggedOutView = document.getElementById('loggedOutView');
+      const userEmailDisplay = document.getElementById('userEmailDisplay');
+
+      if (currentUser) {
+        btnText.innerText = currentUser.email.split('@')[0];
+        loggedInView.classList.remove('hidden');
+        loggedOutView.classList.add('hidden');
+        userEmailDisplay.innerText = currentUser.email;
+      } else {
+        btnText.innerText = 'Account';
+        loggedInView.classList.add('hidden');
+        loggedOutView.classList.remove('hidden');
+      }
+    }
+
+    function openAuthModal() {
+      document.getElementById('authModal').classList.remove('hidden');
+    }
+
+    function closeAuthModal() {
+      document.getElementById('authModal').classList.add('hidden');
+    }
+
+    function toggleAuthMode() {
+      isSignUpMode = !isSignUpMode;
+      const title = document.getElementById('authModalTitle');
+      const actionBtn = document.getElementById('authActionBtn');
+      const switchBtn = document.getElementById('authSwitchBtn');
+
+      if (isSignUpMode) {
+        title.innerText = 'Create Account';
+        actionBtn.innerText = 'Sign Up';
+        switchBtn.innerText = 'Already have an account? Login';
+      } else {
+        title.innerText = 'Customer Login';
+        actionBtn.innerText = 'Login';
+        switchBtn.innerText = "Don't have an account? Sign Up";
+      }
+    }
+
+    async function handleAuthSubmit() {
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value.trim();
+
+      if (!email || !password) return alert('Please enter email and password.');
+
+      if (isSignUpMode) {
+        const { data, error } = await _supabase.auth.signUp({ email, password });
+        if (error) {
+          alert(error.message);
+        } else {
+          alert('Sign up successful! You can now log in.');
+          isSignUpMode = false;
+          toggleAuthMode();
+        }
+      } else {
+        const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          alert(error.message);
+        } else {
+          currentUser = data.user;
+          updateAuthUI();
+          closeAuthModal();
+          alert('Logged in successfully!');
+        }
+      }
+    }
+
+    async function handleLogout() {
+      await _supabase.auth.signOut();
+      currentUser = null;
+      updateAuthUI();
+      closeAuthModal();
+      alert('Logged out successfully.');
+    }
 
     async function loadProducts() {
       const { data: products, error } = await _supabase.from('products').select('*');
@@ -130,7 +265,6 @@
       filterProducts();
     }
 
-    // Unified filtering logic for both search input and category buttons
     function filterProducts() {
       const query = document.getElementById('searchInput').value.toLowerCase().trim();
       
@@ -146,7 +280,6 @@
     function filterByCategory(category, btn) {
       activeCategory = category;
       
-      // Update button styles
       document.querySelectorAll('.cat-btn').forEach(b => {
         b.classList.remove('bg-orange-500', 'text-white');
         b.classList.add('bg-white', 'text-gray-700', 'border');
@@ -194,7 +327,6 @@
 
       document.getElementById('modalProductTitle').innerText = selectedProduct.title;
 
-      // Sizes setup
       const sizeContainer = document.getElementById('sizeContainer');
       const sizeOptions = document.getElementById('sizeOptions');
       if (selectedProduct.sizes && selectedProduct.sizes.length > 0) {
@@ -206,7 +338,6 @@
         sizeContainer.classList.add('hidden');
       }
 
-      // Colors setup
       const colorContainer = document.getElementById('colorContainer');
       const colorOptions = document.getElementById('colorOptions');
       if (selectedProduct.colors && selectedProduct.colors.length > 0) {
@@ -338,12 +469,18 @@
 
     function checkout() {
       if (cart.length === 0) return alert('Your cart is empty!');
-      alert('Order placed successfully!');
+      if (!currentUser) {
+        alert('Please log in or sign up to complete your checkout!');
+        openAuthModal();
+        return;
+      }
+      alert(`Thank you, ${currentUser.email}! Your order has been placed successfully.`);
       cart = [];
       updateCartUI();
       toggleCartModal();
     }
 
+    checkAuthSession();
     loadProducts();
     updateCartUI();
   </script>
