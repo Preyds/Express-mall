@@ -17,7 +17,7 @@
         <i data-lucide="shopping-bag"></i> ExpressMall
       </a>
       <div class="flex-1 max-w-lg relative">
-        <input type="text" id="searchInput" placeholder="Search products, brands and categories..." 
+        <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Search products, brands and categories..." 
                class="w-full py-2 pl-4 pr-10 rounded-md text-gray-800 text-sm focus:outline-none shadow-inner" />
       </div>
       <button onclick="toggleCartModal()" class="relative flex items-center gap-1 text-sm font-semibold">
@@ -39,9 +39,20 @@
       <i data-lucide="zap" class="w-12 h-12 text-yellow-300 animate-pulse"></i>
     </section>
 
+    <!-- Categories Section -->
+    <section>
+      <h3 class="text-sm font-bold text-gray-700 uppercase mb-3">Categories</h3>
+      <div id="categoryContainer" class="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+        <button onclick="filterByCategory('all', this)" class="cat-btn px-4 py-2 bg-orange-500 text-white text-xs font-bold rounded-full whitespace-nowrap shadow-sm transition">All Products</button>
+        <button onclick="filterByCategory('Phones & Tablets', this)" class="cat-btn px-4 py-2 bg-white text-gray-700 hover:bg-gray-100 text-xs font-bold rounded-full whitespace-nowrap shadow-sm transition border">Phones & Tablets</button>
+        <button onclick="filterByCategory('Electronics', this)" class="cat-btn px-4 py-2 bg-white text-gray-700 hover:bg-gray-100 text-xs font-bold rounded-full whitespace-nowrap shadow-sm transition border">Electronics</button>
+        <button onclick="filterByCategory('Fashion', this)" class="cat-btn px-4 py-2 bg-white text-gray-700 hover:bg-gray-100 text-xs font-bold rounded-full whitespace-nowrap shadow-sm transition border">Fashion</button>
+      </div>
+    </section>
+
     <section>
       <div class="flex justify-between items-center mb-3">
-        <h3 class="text-lg font-bold text-gray-800">Recommended For You</h3>
+        <h3 id="sectionTitle" class="text-lg font-bold text-gray-800">Recommended For You</h3>
       </div>
       <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
         <!-- Products injected -->
@@ -102,6 +113,7 @@
 
     let cart = JSON.parse(localStorage.getItem('app_cart')) || [];
     let allProducts = [];
+    let activeCategory = 'all';
     let selectedProduct = null;
     let chosenSize = '';
     let chosenColor = '';
@@ -115,13 +127,41 @@
         return; 
       }
       allProducts = products || [];
-      renderProducts(allProducts);
+      filterProducts();
+    }
+
+    // Unified filtering logic for both search input and category buttons
+    function filterProducts() {
+      const query = document.getElementById('searchInput').value.toLowerCase().trim();
+      
+      const filtered = allProducts.filter(p => {
+        const matchesCategory = activeCategory === 'all' || (p.description && p.description.toLowerCase().includes(activeCategory.toLowerCase())) || (p.title && p.title.toLowerCase().includes(activeCategory.toLowerCase()));
+        const matchesSearch = !query || p.title.toLowerCase().includes(query) || (p.description && p.description.toLowerCase().includes(query));
+        return matchesCategory && matchesSearch;
+      });
+
+      renderProducts(filtered);
+    }
+
+    function filterByCategory(category, btn) {
+      activeCategory = category;
+      
+      // Update button styles
+      document.querySelectorAll('.cat-btn').forEach(b => {
+        b.classList.remove('bg-orange-500', 'text-white');
+        b.classList.add('bg-white', 'text-gray-700', 'border');
+      });
+      btn.classList.remove('bg-white', 'text-gray-700', 'border');
+      btn.classList.add('bg-orange-500', 'text-white');
+
+      document.getElementById('sectionTitle').innerText = category === 'all' ? 'Recommended For You' : category;
+      filterProducts();
     }
 
     function renderProducts(products) {
       const grid = document.getElementById('productGrid');
       if (!products || products.length === 0) {
-        grid.innerHTML = `<p class="col-span-full text-center text-gray-500 py-10">No products found.</p>`;
+        grid.innerHTML = `<p class="col-span-full text-center text-gray-500 py-10">No products found matching your search.</p>`;
         return;
       }
       grid.innerHTML = products.map(p => `
@@ -229,7 +269,6 @@
       toggleCartModal();
     }
 
-    // Detailed Quantity Controllers
     function increaseQty(cartKey) {
       const item = cart.find(i => i.cartKey === cartKey);
       if (item) {
@@ -278,7 +317,6 @@
               <p class="text-[11px] text-gray-500">Size: ${item.size} | Color: ${item.color}</p>
               <p class="text-xs text-orange-600 font-bold mt-0.5">₦${(item.price * item.qty).toLocaleString()}</p>
               
-              <!-- Quantity Modifier Controls -->
               <div class="flex items-center gap-2 mt-2">
                 <button onclick="decreaseQty('${item.cartKey}')" class="w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded text-gray-700 font-bold flex items-center justify-center text-xs">-</button>
                 <span class="text-xs font-bold text-gray-800">${item.qty}</span>
@@ -310,5 +348,4 @@
     updateCartUI();
   </script>
 </body>
-  </html>
-  
+</html>
