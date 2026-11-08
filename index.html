@@ -77,6 +77,29 @@
     </section>
   </main>
 
+    <!-- Full Image Preview Modal -->
+  <div id="imageModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
+    <div class="relative max-w-lg w-full bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+      <div class="p-3 bg-gray-900 text-white flex justify-between items-center">
+        <h4 id="modalImageTitle" class="text-xs font-bold truncate">Product View</h4>
+        <button onclick="closeImageModal()" class="text-gray-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="bg-black flex items-center justify-center p-2">
+        <img id="fullScreenImg" src="" class="max-h-[70vh] w-auto object-contain rounded-lg">
+      </div>
+      <div class="p-4 bg-white flex justify-between items-center border-t">
+        <div>
+          <span id="modalImagePrice" class="text-base font-black text-orange-600">₦0</span>
+        </div>
+        <button id="modalAddToCartFromView" class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-4 py-2.5 rounded-lg uppercase shadow transition">
+          Select Options & Buy
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer class="bg-gray-900 text-gray-300 mt-12 py-8 px-4 space-y-6 text-xs border-t border-gray-800">
     <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -390,6 +413,27 @@
       currentPage = page;
       filterProducts();
       window.scrollTo({ top: 400, behavior: 'smooth' });
+    }
+
+    // Full Image Modal Handlers
+    function openImageModal(id) {
+      const product = allProducts.find(p => p.id === id);
+      if (!product) return;
+
+      document.getElementById('modalImageTitle').innerText = product.title;
+      document.getElementById('fullScreenImg').src = product.image_url;
+      document.getElementById('modalImagePrice').innerText = `₦${product.price.toLocaleString()}`;
+      
+      document.getElementById('modalAddToCartFromView').onclick = function() {
+        closeImageModal();
+        openAddToCartModal(product.id);
+      };
+
+      document.getElementById('imageModal').classList.remove('hidden');
+    }
+
+    function closeImageModal() {
+      document.getElementById('imageModal').classList.add('hidden');
     }
 
     function openAddToCartModal(id) {
