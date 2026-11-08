@@ -141,14 +141,17 @@
           <span>Total:</span>
           <span id="cartTotal">₦0.00</span>
         </div>
-        <button onclick="checkout()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg shadow uppercase text-sm">
-          Proceed to Checkout
+        <button onclick="checkout()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow uppercase text-sm flex items-center justify-center gap-2">
+          <i data-lucide="message-circle"></i> Order via WhatsApp
         </button>
       </div>
     </div>
   </div>
 
   <script>
+    // --- CONFIGURE YOUR WHATSAPP NUMBER HERE (Country code without +) ---
+    const STORE_WHATSAPP_NUMBER = '2348000000000'; // Replace with your phone number
+
     const SUPABASE_URL = 'https://lpkyznjbkfofvmwqxaha.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_jqVK03Q3Q5I9Dgnesw0RsA_qE2O7BnS';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -187,7 +190,6 @@
 
     function handleAuthNavClick() {
       if (currentUser) {
-        // Direct logged in user to profile page
         window.location.href = 'profile.html';
       } else {
         openAuthModal();
@@ -245,7 +247,6 @@
           currentUser = data.user;
           closeAuthModal();
           showToast('Logged in successfully!');
-          // Redirect straight to profile after login
           setTimeout(() => { window.location.href = 'profile.html'; }, 800);
         }
       }
@@ -467,21 +468,44 @@
 
       const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
 
+      // Save order record to Supabase
       const { error } = await _supabase.from('orders').insert([{
         user_email: currentUser.email,
         items: cart,
         total_amount: totalAmount,
-        status: 'Processing'
+        status: 'Pending WhatsApp'
       }]);
 
       if (error) {
         showToast('Checkout failed: ' + error.message, 'error');
-      } else {
-        showToast(`Order placed successfully!`);
-        cart = [];
-        updateCartUI();
-        toggleCartModal();
+        return;
       }
+
+      // Build WhatsApp message
+      let message = `*NEW ORDER - EXPRESSMALL*\n\n`;
+      message += `*Customer:* ${currentUser.email}\n\n`;
+      message += `*Items Ordered:*\n`;
+
+      cart.forEach((item, index) => {
+        message += `${index + 1}. *${item.title}*\n`;
+        message += `   • Size: ${item.size} | Color: ${item.color}\n`;
+        message += `   • Quantity: ${item.qty}\n`;
+        message += `   • Price: ₦${(item.price * item.qty).toLocaleString()}\n\n`;
+      });
+
+      message += `*TOTAL AMOUNT:* ₦${totalAmount.toLocaleString()}\n\n`;
+      message += `Please confirm availability and account details for payment!`;
+
+      // Encodes string for URL redirect
+      const encodedMsg = encodeURIComponent(message);
+      const whatsappUrl = `https://wa.me/${STORE_WHATSAPP_NUMBER}?text=${encodedMsg}`;
+
+      // Reset local cart and redirect
+      cart = [];
+      updateCartUI();
+      toggleCartModal();
+
+      window.open(whatsappUrl, '_blank');
     }
 
     checkAuthSession();
