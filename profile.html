@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ExpressMall | My Profile</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-100 font-sans pb-10">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-40 bg-orange-500 text-white shadow-md">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="index.html" class="text-xl font-black tracking-wider uppercase flex items-center gap-1">
+        <i data-lucide="shopping-bag"></i> ExpressMall
+      </a>
+      <a href="index.html" class="text-xs font-bold bg-orange-600 px-3 py-1.5 rounded-lg hover:bg-orange-700 transition flex items-center gap-1">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Store
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Profile Container -->
+  <main class="max-w-4xl mx-auto px-4 py-6 space-y-6">
+
+    <!-- User Information Header Card -->
+    <div class="bg-white rounded-2xl shadow-sm border p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-4 text-center sm:text-left">
+        <div class="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center font-bold text-2xl border-2 border-orange-500">
+          <span id="userInitial">U</span>
+        </div>
+        <div>
+          <h2 id="userEmailDisplay" class="text-base font-bold text-gray-800">Loading profile...</h2>
+          <span class="inline-block mt-1 bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Verified Account</span>
+        </div>
+      </div>
+      <button onclick="handleLogout()" class="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white font-bold px-5 py-2.5 rounded-xl text-xs uppercase shadow transition flex items-center justify-center gap-2">
+        <i data-lucide="log-out" class="w-4 h-4"></i> Log Out
+      </button>
+    </div>
+
+    <!-- Navigation Tabs / Quick Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+      <!-- Left Column: Delivery Address Card -->
+      <div class="space-y-6">
+        <div class="bg-white rounded-2xl shadow-sm border p-5 space-y-3">
+          <h3 class="text-xs font-bold text-gray-700 uppercase flex items-center gap-2">
+            <i data-lucide="map-pin" class="text-orange-500 w-4 h-4"></i> Default Shipping Address
+          </h3>
+          <div id="addressDisplay" class="text-xs text-gray-600 space-y-1 border-t pt-3">
+            <p class="font-semibold text-gray-800">No address saved yet.</p>
+            <p class="text-[11px] text-gray-400">Add an address to speed up your checkout.</p>
+          </div>
+          <button onclick="toggleAddressModal()" class="w-full mt-2 border border-orange-500 text-orange-600 hover:bg-orange-50 font-bold py-2 rounded-lg text-xs uppercase transition">
+            Edit Address
+          </button>
+        </div>
+      </div>
+
+      <!-- Right Column: Order History -->
+      <div class="md:col-span-2 space-y-4">
+        <div class="bg-white rounded-2xl shadow-sm border p-5 space-y-4">
+          <h3 class="text-xs font-bold text-gray-700 uppercase flex items-center gap-2 border-b pb-3">
+            <i data-lucide="package" class="text-orange-500 w-4 h-4"></i> My Order History
+          </h3>
+          <div id="orderHistoryContainer" class="space-y-4">
+            <p class="text-center text-xs text-gray-400 py-8">Fetching your past orders...</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    const SUPABASE_URL = 'https://lpkyznjbkfofvmwqxaha.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_jqVK03Q3Q5I9Dgnesw0RsA_qE2O7BnS';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentUser = null;
+    lucide.createIcons();
+
+    async function checkAuthSession() {
+      const { data: { session } } = await _supabase.auth.getSession();
+      if (!session) {
+        alert('Please log in to view your profile.');
+        window.location.href = 'index.html';
+        return;
+      }
+      currentUser = session.user;
+      document.getElementById('userEmailDisplay').innerText = currentUser.email;
+      document.getElementById('userInitial').innerText = currentUser.email.charAt(0).toUpperCase();
+      loadOrderHistory();
+    }
+
+    async function loadOrderHistory() {
+      const container = document.getElementById('orderHistoryContainer');
+      const { data: orders, error } = await _supabase
+        .from('orders')
+        .select('*')
+        .eq('user_email', currentUser.email)
+        .order('created_at', { ascending: false });
+
+      if (error || !orders || orders.length === 0) {
+        container.innerHTML = `<p class="text-center text-xs text-gray-400 py-8">You have not placed any orders yet.</p>`;
+        return;
+      }
+
+      container.innerHTML = orders.map(order => {
+        const date = new Date(order.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        const statusColor = order.status === 'Delivered' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700';
+
+        return `
+          <div class="border rounded-xl p-4 space-y-3 bg-gray-50/50">
+            <div class="flex justify-between items-center text-xs">
+              <span class="font-bold text-gray-700">Order ID: #${order.id.slice(0, 8)}</span>
+              <span class="${statusColor} px-2.5 py-0.5 rounded-full font-bold uppercase text-[10px]">${order.status}</span>
+            </div>
+            <p class="text-[11px] text-gray-400">Placed on ${date}</p>
+            <div class="space-y-2 border-t border-b py-2 text-xs text-gray-700">
+              ${order.items.map(item => `
+                <div class="flex items-center justify-between gap-2">
+                  <span class="line-clamp-1 font-medium">${item.title} (${item.size}, ${item.color})</span>
+                  <span class="font-bold text-gray-900">x${item.qty}</span>
+                </div>
+              `).join('')}
+            </div>
+            <div class="flex justify-between items-center pt-1 text-xs font-bold">
+              <span class="text-gray-600">Total Paid:</span>
+              <span class="text-orange-600 text-sm">₦${order.total_amount.toLocaleString()}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function handleLogout() {
+      await _supabase.auth.signOut();
+      window.location.href = 'index.html';
+    }
+
+    checkAuthSession();
+  </script>
+</body>
+</html>
+  
