@@ -77,7 +77,7 @@
     </section>
   </main>
 
-    <!-- Full Image Preview Modal -->
+  <!-- Full Image Preview Modal -->
   <div id="imageModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
     <div class="relative max-w-lg w-full bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col">
       <div class="p-3 bg-gray-900 text-white flex justify-between items-center">
@@ -105,7 +105,7 @@
     <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
       <div class="space-y-3">
         <h4 class="font-bold text-white uppercase tracking-wider text-sm">Contact Us</h4>
-        <p class="flex items-center gap-2"><i data-lucide="phone" class="w-4 h-4 text-orange-500"></i><span>+2348123573170</span></p>
+        <p class="flex items-center gap-2"><i data-lucide="phone" class="w-4 h-4 text-orange-500"></i><span>+23481 2357 3170</span></p>
         <p class="flex items-start gap-2"><i data-lucide="map-pin" class="w-4 h-4 text-orange-500 shrink-0"></i><span>KiKiBlair Central Hub, Lagos, Nigeria</span></p>
       </div>
       <div class="space-y-3">
@@ -362,10 +362,10 @@
 
       grid.innerHTML = paginatedItems.map(p => `
         <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition">
-          <img src="${p.image_url}" alt="${p.title}" class="h-36 sm:h-44 w-full object-cover">
+          <img src="${p.image_url}" alt="${p.title}" onclick="openImageModal('${p.id}')" class="h-36 sm:h-44 w-full object-cover cursor-pointer hover:opacity-95 transition" title="Click to view full image">
           <div class="p-2.5 flex-1 flex flex-col justify-between">
             <div>
-              <h4 class="text-xs sm:text-sm font-medium text-gray-800 line-clamp-2">${p.title}</h4>
+              <h4 onclick="openImageModal('${p.id}')" class="text-xs sm:text-sm font-medium text-gray-800 line-clamp-2 cursor-pointer hover:text-orange-500 transition">${p.title}</h4>
               <div class="mt-1 flex items-baseline gap-1.5">
                 <span class="text-sm sm:text-base font-bold text-gray-900">₦${p.price.toLocaleString()}</span>
                 ${p.old_price ? `<span class="text-xs text-gray-400 line-through">₦${p.old_price.toLocaleString()}</span>` : ''}
@@ -623,7 +623,7 @@
       message += `Please confirm availability and account details for payment!`;
 
       const encodedMsg = encodeURIComponent(message);
-      const whatsappUrl = `https://wa.me/${2348123573170}?text=${encodedMsg}`;
+      const whatsappUrl = `https://wa.me/${STORE_WHATSAPP_NUMBER}?text=${encodedMsg}`;
 
       cart = [];
       updateCartUI();
