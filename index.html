@@ -8,7 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body class="bg-gray-100 font-sans pb-20 md:pb-0">
+<body class="bg-gray-100 font-sans pb-24 md:pb-12">
 
   <!-- Toast Notification Container -->
   <div id="toastContainer" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
@@ -20,7 +20,7 @@
         <i data-lucide="shopping-bag"></i> ExpressMall
       </a>
       <div class="flex-1 max-w-lg relative">
-        <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Search products, brands and categories..." 
+        <input type="text" id="searchInput" oninput="handleSearchInput()" placeholder="Search products, brands and categories..." 
                class="w-full py-2 pl-4 pr-10 rounded-md text-gray-800 text-sm focus:outline-none shadow-inner" />
       </div>
       <div class="flex items-center gap-2">
@@ -61,17 +61,49 @@
       </div>
     </section>
 
-    <section>
-      <div class="flex justify-between items-center mb-3">
+    <!-- Product Catalog Section -->
+    <section class="space-y-4">
+      <div class="flex justify-between items-center">
         <h3 id="sectionTitle" class="text-lg font-bold text-gray-800">Recommended For You</h3>
       </div>
-      <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-        <!-- Products injected -->
+    
+
+      <!-- Pagination Container -->
+      <div id="paginationContainer" class="flex items-center justify-center gap-1.5 pt-6 pb-2">
+        <!-- Pagination buttons injected here -->
       </div>
     </section>
   </main>
 
-  <!-- Auth Modal (Login / Signup) -->
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-gray-300 mt-12 py-8 px-4 space-y-6 text-xs border-t border-gray-800">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="space-y-3">
+        <h4 class="font-bold text-white uppercase tracking-wider text-sm">Contact Us</h4>
+        <p class="flex items-center gap-2"><i data-lucide="phone" class="w-4 h-4 text-orange-500"><span>+234 800 000 0000</span></i></p>
+        <p class="flex items-start gap-2"><i data-lucide="map-pin" class="w-4 h-4 text-orange-500 shrink-0"></i><span>ExpressMall Central Hub, Lagos, Nigeria</span></p>
+      </div>
+      <div class="space-y-3">
+        <h4 class="font-bold text-white uppercase tracking-wider text-sm">Sign Up For Discounts & Updates</h4>
+        <div class="flex gap-2 max-w-sm">
+          <input type="email" placeholder="Enter your email address" class="bg-gray-800 border border-gray-700 px-3 py-2 rounded-lg text-white text-xs w-full focus:outline-none focus:border-orange-500">
+          <button onclick="showToast('Thank you for subscribing!')" class="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2 rounded-lg uppercase whitespace-nowrap transition">Subscribe</button>
+        </div>
+      </div>
+    </div>
+    <div class="max-w-7xl mx-auto pt-4 border-t border-gray-800 text-center text-gray-500 text-[11px]">
+      <p>© 2026 ExpressMall. Powered by Custom Mobile Architecture.</p>
+    </div>
+  </footer>
+
+  <!-- Floating WhatsApp Quick Button -->
+  <a href="https://wa.me/2348123573170?text=Hello%20ExpressMall,%20I%20have%20an%20inquiry%20about%20your%20store!" target="_blank" 
+     class="fixed bottom-5 right-5 z-50 bg-green-500 hover:bg-green-600 text-white p-3.5 rounded-full shadow-2xl flex items-center justify-center transition transform hover:scale-110">
+    <i data-lucide="message-circle" class="w-7 h-7"></i>
+    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow">1</span>
+  </a>
+
+  <!-- Auth Modal -->
   <div id="authModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-sm rounded-xl p-5 shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b pb-2">
@@ -149,8 +181,7 @@
   </div>
 
   <script>
-    // --- CONFIGURE YOUR WHATSAPP NUMBER HERE (Country code without +) ---
-    const STORE_WHATSAPP_NUMBER = '2348000000000'; // Replace with your phone number
+    const STORE_WHATSAPP_NUMBER = '2348123573170'; // Update with your WhatsApp number
 
     const SUPABASE_URL = 'https://lpkyznjbkfofvmwqxaha.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_jqVK03Q3Q5I9Dgnesw0RsA_qE2O7BnS';
@@ -159,6 +190,8 @@
     let cart = JSON.parse(localStorage.getItem('app_cart')) || [];
     let allProducts = [];
     let activeCategory = 'all';
+    let currentPage = 1;
+    const itemsPerPage = 10; // Number of products per page
     let selectedProduct = null;
     let chosenSize = '';
     let chosenColor = '';
@@ -259,6 +292,11 @@
       filterProducts();
     }
 
+    function handleSearchInput() {
+      currentPage = 1;
+      filterProducts();
+    }
+
     function filterProducts() {
       const query = document.getElementById('searchInput').value.toLowerCase().trim();
       const filtered = allProducts.filter(p => {
@@ -271,6 +309,7 @@
 
     function filterByCategory(category, btn) {
       activeCategory = category;
+      currentPage = 1;
       document.querySelectorAll('.cat-btn').forEach(b => {
         b.classList.remove('bg-orange-500', 'text-white');
         b.classList.add('bg-white', 'text-gray-700', 'border');
@@ -283,11 +322,21 @@
 
     function renderProducts(products) {
       const grid = document.getElementById('productGrid');
+      const paginationContainer = document.getElementById('paginationContainer');
+
       if (!products || products.length === 0) {
         grid.innerHTML = `<p class="col-span-full text-center text-gray-500 py-10">No products found matching your search.</p>`;
+        paginationContainer.innerHTML = '';
         return;
       }
-      grid.innerHTML = products.map(p => `
+
+      // Pagination slice
+      const totalPages = Math.ceil(products.length / itemsPerPage);
+      if (currentPage > totalPages) currentPage = totalPages;
+      const start = (currentPage - 1) * itemsPerPage;
+      const paginatedItems = products.slice(start, start + itemsPerPage);
+
+      grid.innerHTML = paginatedItems.map(p => `
         <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition">
           <img src="${p.image_url}" alt="${p.title}" class="h-36 sm:h-44 w-full object-cover">
           <div class="p-2.5 flex-1 flex flex-col justify-between">
@@ -305,7 +354,42 @@
           </div>
         </div>
       `).join('');
+
+      // Render Pagination Buttons
+      if (totalPages > 1) {
+        let paginationHTML = `
+          <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled class="opacity-40 cursor-not-allowed"' : ''} 
+                  class="w-9 h-9 bg-white border rounded-full flex items-center justify-center text-gray-700 hover:bg-orange-500 hover:text-white transition shadow-sm">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          </button>
+        `;
+
+        for (let i = 1; i <= totalPages; i++) {
+          const activeClass = i === currentPage ? 'bg-orange-500 text-white font-bold border-orange-500' : 'bg-white text-gray-700 hover:bg-gray-100 border';
+          paginationHTML += `
+            <button onclick="changePage(${i})" class="w-9 h-9 rounded-full text-xs font-bold transition shadow-sm ${activeClass}">${i}</button>
+          `;
+        }
+
+        paginationHTML += `
+          <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled class="opacity-40 cursor-not-allowed"' : ''} 
+                  class="w-9 h-9 bg-white border rounded-full flex items-center justify-center text-gray-700 hover:bg-orange-500 hover:text-white transition shadow-sm">
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        `;
+
+        paginationContainer.innerHTML = paginationHTML;
+      } else {
+        paginationContainer.innerHTML = '';
+      }
+
       lucide.createIcons();
+    }
+
+    function changePage(page) {
+      currentPage = page;
+      filterProducts();
+      window.scrollTo({ top: 400, behavior: 'smooth' });
     }
 
     function openAddToCartModal(id) {
@@ -316,115 +400,7 @@
       chosenColor = '';
       document.getElementById('modalProductTitle').innerText = selectedProduct.title;
 
-      const sizeContainer = document.getElementById('sizeContainer');
-      const sizeOptions = document.getElementById('sizeOptions');
-      if (selectedProduct.sizes && selectedProduct.sizes.length > 0) {
-        sizeContainer.classList.remove('hidden');
-        sizeOptions.innerHTML = selectedProduct.sizes.map(size => `
-          <button onclick="selectSize('${size}', this)" type="button" class="size-btn px-3 py-1.5 border rounded text-xs font-bold text-gray-700 hover:border-orange-500">${size}</button>
-        `).join('');
-      } else {
-        sizeContainer.classList.add('hidden');
-      }
-
-      const colorContainer = document.getElementById('colorContainer');
-      const colorOptions = document.getElementById('colorOptions');
-      if (selectedProduct.colors && selectedProduct.colors.length > 0) {
-        colorContainer.classList.remove('hidden');
-        colorOptions.innerHTML = selectedProduct.colors.map(color => `
-          <button onclick="selectColor('${color}', this)" type="button" class="color-btn px-3 py-1.5 border rounded text-xs font-bold text-gray-700 hover:border-orange-500">${color}</button>
-        `).join('');
-      } else {
-        colorContainer.classList.add('hidden');
-      }
-
-      document.getElementById('confirmAddToCartBtn').onclick = finalizeAddToCart;
-      document.getElementById('optionModal').classList.remove('hidden');
-    }
-
-    function selectSize(size, btn) {
-      chosenSize = size;
-      document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('bg-orange-500', 'text-white'));
-      btn.classList.add('bg-orange-500', 'text-white');
-    }
-
-    function selectColor(color, btn) {
-      chosenColor = color;
-      document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('bg-orange-500', 'text-white'));
-      btn.classList.add('bg-orange-500', 'text-white');
-    }
-
-    function closeOptionModal() {
-      document.getElementById('optionModal').classList.add('hidden');
-    }
-
-    function finalizeAddToCart() {
-      if (selectedProduct.sizes && selectedProduct.sizes.length > 0 && !chosenSize) {
-        showToast('Please select a size!', 'error');
-        return;
-      }
-      if (selectedProduct.colors && selectedProduct.colors.length > 0 && !chosenColor) {
-        showToast('Please select a color!', 'error');
-        return;
-      }
-
-      const cartKey = `${selectedProduct.id}-${chosenSize}-${chosenColor}`;
-      const existing = cart.find(item => item.cartKey === cartKey);
-
-      if (existing) {
-        existing.qty += 1;
-      } else {
-        cart.push({
-          cartKey,
-          id: selectedProduct.id,
-          title: selectedProduct.title,
-          price: selectedProduct.price,
-          image_url: selectedProduct.image_url,
-          size: chosenSize || 'Standard',
-          color: chosenColor || 'Standard',
-          qty: 1
-        });
-      }
-
-      updateCartUI();
-      closeOptionModal();
-      toggleCartModal();
-      showToast('Added to cart!');
-    }
-
-    function increaseQty(cartKey) {
-      const item = cart.find(i => i.cartKey === cartKey);
-      if (item) { item.qty += 1; updateCartUI(); }
-    }
-
-    function decreaseQty(cartKey) {
-      const item = cart.find(i => i.cartKey === cartKey);
-      if (item) {
-        item.qty -= 1;
-        if (item.qty <= 0) cart = cart.filter(i => i.cartKey !== cartKey);
-        updateCartUI();
-      }
-    }
-
-    function removeFromCart(cartKey) {
-      cart = cart.filter(item => item.cartKey !== cartKey);
-      updateCartUI();
-      showToast('Item removed from cart.');
-    }
-
-    function updateCartUI() {
-      localStorage.setItem('app_cart', JSON.stringify(cart));
-      const badge = document.getElementById('cartBadge');
-      const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
-      
-      if (totalQty > 0) {
-        badge.innerText = totalQty;
-        badge.classList.remove('hidden');
-      } else {
-        badge.classList.add('hidden');
-      }
-
-      const container = document.getElementById('cartItemsContainer');
+    const container = document.getElementById('cartItemsContainer');
       if (cart.length === 0) {
         container.innerHTML = `<p class="text-center text-gray-500 mt-10">Your cart is empty.</p>`;
       } else {
@@ -468,7 +444,6 @@
 
       const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
 
-      // Save order record to Supabase
       const { error } = await _supabase.from('orders').insert([{
         user_email: currentUser.email,
         items: cart,
@@ -481,7 +456,6 @@
         return;
       }
 
-      // Build WhatsApp message
       let message = `*NEW ORDER - EXPRESSMALL*\n\n`;
       message += `*Customer:* ${currentUser.email}\n\n`;
       message += `*Items Ordered:*\n`;
@@ -496,11 +470,9 @@
       message += `*TOTAL AMOUNT:* ₦${totalAmount.toLocaleString()}\n\n`;
       message += `Please confirm availability and account details for payment!`;
 
-      // Encodes string for URL redirect
       const encodedMsg = encodeURIComponent(message);
-      const whatsappUrl = `https://wa.me/${2348123573170}?text=${encodedMsg}`;
+      const whatsappUrl = `https://wa.me/${STORE_WHATSAPP_NUMBER}?text=${encodedMsg}`;
 
-      // Reset local cart and redirect
       cart = [];
       updateCartUI();
       toggleCartModal();
